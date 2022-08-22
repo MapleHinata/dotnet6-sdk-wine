@@ -1,11 +1,11 @@
-FROM archlinux:base-devel
+FROM archlinux:base
 
 #Enable Multilib on image
 RUN echo "[multilib]" | tee -a /etc/pacman.conf
 RUN echo "Include = /etc/pacman.d/mirrorlist" | tee -a /etc/pacman.conf
 
 #Install Wine and dependencies
-RUN pacman -Syu wine-staging samba lib32-gnutls xorg-server-xvfb unzip --noconfirm && pacman -Scc --noconfirm
+RUN pacman -Syu wine-staging samba lib32-gnutls xorg-server-xvfb unzip --noconfirm && find /var/cache/pacman/ -type f -delete
 
 #Copy dotnet alias
 COPY dotnet /usr/local/bin
@@ -14,14 +14,14 @@ RUN chmod +x /usr/local/bin/dotnet
 # Install Winetricks
 RUN curl -o winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
 RUN chmod +x winetricks
-RUN cp winetricks /usr/local/bin
+RUN mv winetricks /usr/local/bin
 
 #Add non root user as wine really hates running as root
 RUN groupadd --gid 1000 wine && useradd -m --uid 1000 --gid 1000 wine
 USER wine
 
 #Create prefix
-RUN wine wineboot & xvfb-run winetricks -q --force vcrun2019
+RUN wine wineboot & xvfb-run winetricks -q --force vcrun2019 && rm -rf ~/.cache
 
 #Install .NET 6 SDK
 WORKDIR /tmp
